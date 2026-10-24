@@ -39,6 +39,12 @@
             padding-bottom: 20px;
         }
 
+        .logo-img {
+            max-width: 120px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+
         header h1 {
             color: var(--primary-purple);
             margin: 0;
@@ -182,7 +188,6 @@
             font-weight: bold;
         }
 
-        /* Admin Panel Styles */
         #admin-panel {
             display: none;
             margin-top: 40px;
@@ -241,6 +246,7 @@
 
 <div class="container">
     <header>
+        <img src="logo.jpg" alt="Group Six University Logo" class="logo-img">
         <h1>Group 6 University</h1>
         <h2>Office of Admissions and Academic Records — Undergraduate Application</h2>
     </header>
@@ -251,7 +257,6 @@
 
     <form id="admissionForm">
         
-        <!-- SECTION A: PERSONAL INFORMATION -->
         <fieldset>
             <legend>Section A: Personal Information</legend>
             
@@ -307,7 +312,6 @@
             </div>
         </fieldset>
 
-        <!-- SECTION B: PROGRAMME SELECTION -->
         <fieldset>
             <legend>Section B: Programme Selection</legend>
             
@@ -346,7 +350,6 @@
             </div>
         </fieldset>
 
-        <!-- SECTION C: ACADEMIC BACKGROUND -->
         <fieldset>
             <legend>Section C: Academic Background (Senior High School)</legend>
             
@@ -400,7 +403,6 @@
             </table>
         </fieldset>
 
-        <!-- SECTION D: GUARDIAN CONTACT -->
         <fieldset>
             <legend>Section D: Guardian / Emergency Contact</legend>
             
@@ -427,7 +429,6 @@
             </div>
         </fieldset>
 
-        <!-- SECTION E: DECLARATION -->
         <fieldset>
             <legend>Section E: Declaration</legend>
             <p style="font-size: 13px; line-height: 1.5;">
@@ -452,7 +453,6 @@
 
     </form>
 
-    <!-- ADMIN RECORDS DASHBOARD PANEL -->
     <div id="admin-panel">
         <h3>Submitted Applications Review Dashboard</h3>
         <p style="font-size: 13px; color: #555;">Review all candidate applications saved in browser storage below:</p>
@@ -469,7 +469,6 @@
                     </tr>
                 </thead>
                 <tbody id="adminTableBody">
-                    <!-- Dynamic rows will load here -->
                 </tbody>
             </table>
         </div>
@@ -478,10 +477,8 @@
 </div>
 
 <script>
-    // Automatically set today's date on load
     document.getElementById('submissionDate').valueAsDate = new Date();
 
-    // Handle form submission
     document.getElementById('admissionForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -506,7 +503,6 @@
         }, 6000);
     });
 
-    // Toggle Admin Panel View
     document.getElementById('toggleAdminBtn').addEventListener('click', function() {
         const panel = document.getElementById('admin-panel');
         if (panel.style.display === 'none' || panel.style.display === '') {
@@ -518,7 +514,6 @@
         }
     });
 
-    // Load Data into Admin Table
     function loadAdminTable() {
         const tbody = document.getElementById('adminTableBody');
         tbody.innerHTML = '';
@@ -543,7 +538,6 @@
         });
     }
 
-    // Clear Stored Records
     document.getElementById('clearDataBtn').addEventListener('click', function() {
         if (confirm('Are you sure you want to clear all stored application records? This action cannot be undone.')) {
             localStorage.removeItem('g6u_applications');
