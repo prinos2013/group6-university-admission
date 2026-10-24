@@ -261,12 +261,13 @@
         </div>
     </header>
 
-    <div id="success-msg">Application submitted successfully! Your tracking record has been saved locally.</div>
+    <div id="success-msg">Application submitted successfully! Your details have been sent to the university database.</div>
 
     <p class="instruction">Please complete all required fields accurately in BLOCK LETTERS. Ensure your WASSCE/SSCE results are correctly stated.</p>
 
     <form id="admissionForm">
         
+        <!-- SECTION A: PERSONAL INFORMATION -->
         <fieldset>
             <legend>Section A: Personal Information</legend>
             
@@ -322,6 +323,7 @@
             </div>
         </fieldset>
 
+        <!-- SECTION B: PROGRAMME SELECTION -->
         <fieldset>
             <legend>Section B: Programme Selection</legend>
             
@@ -360,6 +362,7 @@
             </div>
         </fieldset>
 
+        <!-- SECTION C: ACADEMIC BACKGROUND -->
         <fieldset>
             <legend>Section C: Academic Background (Senior High School)</legend>
             
@@ -413,6 +416,7 @@
             </table>
         </fieldset>
 
+        <!-- SECTION D: GUARDIAN CONTACT -->
         <fieldset>
             <legend>Section D: Guardian / Emergency Contact</legend>
             
@@ -439,6 +443,7 @@
             </div>
         </fieldset>
 
+        <!-- SECTION E: DECLARATION -->
         <fieldset>
             <legend>Section E: Declaration</legend>
             <p style="font-size: 13px; line-height: 1.5;">
@@ -458,14 +463,15 @@
 
         <div class="btn-container">
             <button type="submit">Submit Application</button>
-            <button type="button" class="admin-btn" id="toggleAdminBtn">Toggle Admin Records</button>
+            <button type="button" class="admin-btn" id="toggleAdminBtn">Toggle Local Records</button>
         </div>
 
     </form>
 
+    <!-- ADMIN RECORDS DASHBOARD PANEL -->
     <div id="admin-panel">
-        <h3>Submitted Applications Review Dashboard</h3>
-        <p style="font-size: 13px; color: #555;">Review all candidate applications saved in browser storage below:</p>
+        <h3>Local Device Backup Review Dashboard</h3>
+        <p style="font-size: 13px; color: #555;">Review candidate applications saved locally on this specific browser:</p>
         <div class="admin-table-container">
             <table class="admin-table" id="adminTable">
                 <thead>
@@ -482,37 +488,50 @@
                 </tbody>
             </table>
         </div>
-        <button type="button" class="danger-btn" id="clearDataBtn">Clear All Stored Records</button>
+        <button type="button" class="danger-btn" id="clearDataBtn">Clear Local Backup Records</button>
     </div>
 </div>
 
 <script>
+    // Automatically set today's date on load
     document.getElementById('submissionDate').valueAsDate = new Date();
 
+    // Handle form submission and sync to Google Sheets
     document.getElementById('admissionForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const formData = new FormData(this);
+        const form = this;
+        const formData = new FormData(form);
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbx7OAHBodAinvmeDX5esD0hbIDQnuxSRBATDJhA_5kq-B7o_vqd6UkppjpDQmobVhp0/exec';
+
+        // Local storage backup copy
         const dataObj = {};
         formData.forEach((value, key) => { dataObj[key] = value; });
-
         let applications = JSON.parse(localStorage.getItem('g6u_applications') || '[]');
         applications.push({ ...dataObj, submittedAt: new Date().toLocaleString() });
         localStorage.setItem('g6u_applications', JSON.stringify(applications));
 
-        const successMsg = document.getElementById('success-msg');
-        successMsg.style.display = 'block';
-        successMsg.scrollIntoView({ behavior: 'smooth' });
-        this.reset();
-        document.getElementById('submissionDate').valueAsDate = new Date();
+        // Submit data to Google Sheets database via fetch API
+        fetch(scriptURL, { method: 'POST', body: new URLSearchParams(formData) })
+            .then(response => {
+                const successMsg = document.getElementById('success-msg');
+                successMsg.style.display = 'block';
+                successMsg.scrollIntoView({ behavior: 'smooth' });
+                form.reset();
+                document.getElementById('submissionDate').valueAsDate = new Date();
+                loadAdminTable();
 
-        loadAdminTable();
-
-        setTimeout(() => {
-            successMsg.style.display = 'none';
-        }, 6000);
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 6000);
+            })
+            .catch(error => {
+                console.error('Error!', error.message);
+                alert('Application saved locally, but live database sync encountered an issue. Please verify your internet connection.');
+            });
     });
 
+    // Toggle Admin Panel View
     document.getElementById('toggleAdminBtn').addEventListener('click', function() {
         const panel = document.getElementById('admin-panel');
         if (panel.style.display === 'none' || panel.style.display === '') {
@@ -524,13 +543,14 @@
         }
     });
 
+    // Load Data into Local Admin Table
     function loadAdminTable() {
         const tbody = document.getElementById('adminTableBody');
         tbody.innerHTML = '';
         let applications = JSON.parse(localStorage.getItem('g6u_applications') || '[]');
 
         if (applications.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#777;">No applications submitted yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#777;">No local records saved on this device.</td></tr>';
             return;
         }
 
@@ -548,11 +568,12 @@
         });
     }
 
+    // Clear Local Stored Records
     document.getElementById('clearDataBtn').addEventListener('click', function() {
-        if (confirm('Are you sure you want to clear all stored application records? This action cannot be undone.')) {
+        if (confirm('Are you sure you want to clear local backup records from this device?')) {
             localStorage.removeItem('g6u_applications');
             loadAdminTable();
-            alert('All records have been cleared.');
+            alert('Local backups cleared.');
         }
     });
 </script>
