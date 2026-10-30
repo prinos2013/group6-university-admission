@@ -184,16 +184,13 @@
         .btn-container {
             text-align: center;
             margin-top: 30px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
         }
 
-        button[type="submit"], .admin-btn {
+        button[type="submit"] {
             background-color: var(--primary-purple);
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 15px 40px;
             font-size: 15px;
             font-weight: bold;
             border-radius: 4px;
@@ -203,17 +200,13 @@
             letter-spacing: 1px;
         }
 
-        button[type="submit"]:hover, .admin-btn:hover {
+        button[type="submit"]:hover {
             background-color: var(--primary-hover);
         }
 
         button:disabled {
             background-color: #a379c9;
             cursor: not-allowed;
-        }
-
-        .admin-btn {
-            background-color: #333;
         }
 
         #success-msg {
@@ -226,50 +219,6 @@
             margin-bottom: 20px;
             text-align: center;
             font-weight: bold;
-        }
-
-        #admin-panel {
-            display: none;
-            margin-top: 40px;
-            border-top: 3px dashed var(--primary-purple);
-            padding-top: 20px;
-        }
-
-        .admin-table-container {
-            overflow-x: auto;
-            max-height: 400px;
-        }
-
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        .admin-table th, .admin-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        .admin-table th {
-            background-color: var(--primary-purple);
-            color: white;
-        }
-
-        .danger-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 10px;
-        }
-
-        .danger-btn:hover {
-            background-color: #bd2130;
         }
 
         @media (max-width: 768px) {
@@ -533,35 +482,9 @@
 
         <div class="btn-container">
             <button type="submit" id="submitBtn">Submit Application</button>
-            <button type="button" class="admin-btn" id="toggleAdminBtn">Toggle Local Records</button>
         </div>
 
     </form>
-
-    <!-- ADMIN RECORDS DASHBOARD PANEL -->
-    <div id="admin-panel">
-        <h3>Local Device Backup Review Dashboard</h3>
-        <p style="font-size: 13px; color: #555;">Review candidate applications saved locally on this specific browser:</p>
-        <div class="admin-table-container">
-            <table class="admin-table" id="adminTable">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Full Name</th>
-                        <th>Photo</th>
-                        <th>Ghana Card</th>
-                        <th>Phone</th>
-                        <th>1st Choice</th>
-                        <th>High School</th>
-                        <th>Certificates Attached</th>
-                    </tr>
-                </thead>
-                <tbody id="adminTableBody">
-                </tbody>
-            </table>
-        </div>
-        <button type="button" class="danger-btn" id="clearDataBtn">Clear Local Backup Records</button>
-    </div>
 </div>
 
 <script>
@@ -650,23 +573,7 @@
             if (cert3Data) certCount++;
             dataObj.certificates_count = certCount;
 
-            // Local storage backup copy (without large files to prevent exceeding quota)
-            let backupSummary = { ...dataObj };
-            // For localStorage lightness, keep metadata and photo preview thumbnail
-            backupSummary.certificate_1 = cert1Data ? cert1Data.filename : '';
-            backupSummary.certificate_2 = cert2Data ? cert2Data.filename : '';
-            backupSummary.certificate_3 = cert3Data ? cert3Data.filename : '';
-            backupSummary.submittedAt = new Date().toLocaleString();
-
-            let applications = JSON.parse(localStorage.getItem('g6u_applications') || '[]');
-            applications.push(backupSummary);
-            try {
-                localStorage.setItem('g6u_applications', JSON.stringify(applications));
-            } catch (storageErr) {
-                console.warn('Storage limit reached for local storage backup.');
-            }
-
-            // Submit JSON payload to Google Apps Script / Database
+            // Submit payload to Google Apps Script / Database
             await fetch(scriptURL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -679,7 +586,6 @@
             form.reset();
             document.getElementById('passportPreview').style.display = 'none';
             document.getElementById('submissionDate').valueAsDate = new Date();
-            loadAdminTable();
 
             setTimeout(() => {
                 successMsg.style.display = 'none';
@@ -687,62 +593,10 @@
 
         } catch (error) {
             console.error('Submission error:', error);
-            alert('Your application was prepared locally, but we encountered an issue communicating with the remote server. Please check your network connection.');
+            alert('Your application could not be submitted. Please check your internet connection and try again.');
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerText = 'Submit Application';
-        }
-    });
-
-    // Toggle Admin Panel View
-    document.getElementById('toggleAdminBtn').addEventListener('click', function() {
-        const panel = document.getElementById('admin-panel');
-        if (panel.style.display === 'none' || panel.style.display === '') {
-            panel.style.display = 'block';
-            loadAdminTable();
-            panel.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            panel.style.display = 'none';
-        }
-    });
-
-    // Load Data into Local Admin Table
-    function loadAdminTable() {
-        const tbody = document.getElementById('adminTableBody');
-        tbody.innerHTML = '';
-        let applications = JSON.parse(localStorage.getItem('g6u_applications') || '[]');
-
-        if (applications.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#777;">No local records saved on this device.</td></tr>';
-            return;
-        }
-
-        applications.forEach(app => {
-            const tr = document.createElement('tr');
-            const photoThumbnail = app.passport_photo 
-                ? `<img src="${app.passport_photo}" style="width:36px; height:42px; object-fit:cover; border-radius:3px;">` 
-                : 'None';
-
-            tr.innerHTML = `
-                <td>${app.submittedAt || 'N/A'}</td>
-                <td><b>${app.fullname || ''}</b></td>
-                <td>${photoThumbnail}</td>
-                <td>${app.ghanacard || ''}</td>
-                <td>${app.phone || ''}</td>
-                <td>${app.firstchoice || ''}</td>
-                <td>${app.schoolname || ''}</td>
-                <td>${app.certificates_count || 0} file(s)</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    // Clear Local Stored Records
-    document.getElementById('clearDataBtn').addEventListener('click', function() {
-        if (confirm('Are you sure you want to clear local backup records from this device?')) {
-            localStorage.removeItem('g6u_applications');
-            loadAdminTable();
-            alert('Local backups cleared.');
         }
     });
 </script>
